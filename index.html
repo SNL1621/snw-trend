@@ -45,7 +45,7 @@ h1{font-size:1.5rem;font-weight:900;line-height:1.3;margin:0;text-wrap:balance}
 .tile .k{font-size:.72rem;color:var(--muted);letter-spacing:.06em}
 .tile .v{font-size:1.15rem;font-weight:900;line-height:1.3;overflow-wrap:anywhere;display:flex;align-items:center;gap:8px}
 .tile.brand .v{font-size:1.05rem}
-.sw{flex:none;width:18px;height:18px;border-radius:50%;border:1px solid rgba(0,0,0,.25)}
+.sw{display:inline-block;flex:none;width:18px;height:18px;border-radius:50%;border:1px solid rgba(0,0,0,.25)}
 .next{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .next b{color:var(--fg)}
 @media (max-width:480px){
@@ -56,8 +56,14 @@ h1{font-size:1.5rem;font-weight:900;line-height:1.3;margin:0;text-wrap:balance}
 .lookup{display:flex;flex-direction:column;gap:10px}
 .lookup h2,.forecast h2{font-size:1rem;font-weight:900;margin:0}
 .row-in{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-input[type=date]{font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-height:44px}
+select,input[type=date]{font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-height:44px}
 .pickout{font-size:.95rem}
+.filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.fld{display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:var(--muted);min-width:0}
+.fld select{width:100%;min-width:0;font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-height:44px}
+.chk{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--muted)}
+.chk input{width:18px;height:18px;accent-color:var(--accent)}
+@media (max-width:480px){.filters{grid-template-columns:1fr}}
 .forecast{display:flex;flex-direction:column;gap:12px}
 .list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
 .list li{display:grid;grid-template-columns:5.6em minmax(0,1fr);gap:4px 12px;padding:12px 14px;border-top:1px solid var(--line);align-items:center}
@@ -100,6 +106,21 @@ button.ghost{background:var(--accent-soft);color:var(--fg)}
     <div class="pickout" id="pickout" aria-live="polite"></div>
   </section>
 
+  <section class="lookup" aria-labelledby="flt-h">
+    <h2 id="flt-h">条件で日付を探す</h2>
+    <div class="filters">
+      <label class="fld" for="fb">ブランド<select id="fb"></select></label>
+      <label class="fld" for="fc">カラー<select id="fc"></select></label>
+      <label class="fld" for="fs">着こなし<select id="fs"></select></label>
+    </div>
+    <div class="row-in">
+      <label class="chk" for="fpast"><input type="checkbox" id="fpast">過去の日も含める</label>
+      <button type="button" id="fclear" class="ghost">条件をリセット</button>
+    </div>
+    <div class="pickout" id="fsum" aria-live="polite"></div>
+    <ol class="list" id="flist" hidden></ol>
+  </section>
+
   <section class="forecast">
     <h2>これからのトレンド</h2>
     <ol class="list" id="list"></ol>
@@ -124,6 +145,7 @@ const FIRST=DAYS[0][0], LAST=DAYS[DAYS.length-1][0], WD="日月火水木金土";
 const pad=n=>String(n).padStart(2,"0");
 function keyAt(ms){ const x=new Date(ms+3*3600000); return x.getUTCFullYear()+"-"+pad(x.getUTCMonth()+1)+"-"+pad(x.getUTCDate()); }
 function shift(key,n){ const p=key.split("-").map(Number), x=new Date(Date.UTC(p[0],p[1]-1,p[2]+n)); return x.getUTCFullYear()+"-"+pad(x.getUTCMonth()+1)+"-"+pad(x.getUTCDate()); }
+function filterKeys(b,c,st,fromKey){ const out=[]; DAYS.forEach(r=>{ if(fromKey&&r[0]<fromKey) return; if(c&&r[1]!==c) return; if(st&&r[2]!==st) return; if(b&&r[3]!==b) return; out.push(r[0]); }); return out; }
 function trendOf(key){ const r=MAP[key]; return r?{color:COLORS[r[0]-1],sw:SWATCH[r[0]-1],style:STYLES[r[1]-1],brand:BRANDS[r[2]-1]}:null; }
 function fmt(key,withYear){ const p=key.split("-").map(Number), w=WD[new Date(Date.UTC(p[0],p[1]-1,p[2])).getUTCDay()]; return (withYear?p[0]+"/":"")+p[1]+"/"+p[2]+"("+w+")"; }
 if(typeof document!=="undefined"){
@@ -155,9 +177,24 @@ if(typeof document!=="undefined"){
     const v=$("pick").value; if(!v){ $("pickout").textContent=""; return; }
     const t=trendOf(v), o=$("pickout"); o.replaceChildren();
     if(!t){ o.style.display="block"; o.textContent="この日の結果は掲載していません。掲載期間は "+fmt(FIRST,true)+" 〜 "+fmt(LAST,true)+" です。"; return; }
-    const lead=document.createElement("b"); lead.textContent=fmt(v,true)+" 6:00〜 "; o.append(lead); o.appendChild(inline(t));
+    const lead=document.createElement("b"); lead.textContent=fmt(v,true)+" 6:00〜"; const w=document.createElement("div"); w.className="t"; w.appendChild(inline(t)); o.append(lead,w);
     o.style.display="flex"; o.style.flexWrap="wrap"; o.style.gap="4px 14px"; o.style.alignItems="center";
   }
+  function fill(sel,names,idxs){ sel.replaceChildren(); const o=document.createElement("option"); o.value=""; o.textContent="すべて"; sel.appendChild(o); idxs.forEach(i=>{ const e=document.createElement("option"); e.value=String(i); e.textContent=names[i-1]; sel.appendChild(e); }); }
+  const uniq=k=>Array.from(new Set(DAYS.map(r=>r[k]))).sort((a,b)=>a-b);
+  fill($("fb"),BRANDS,uniq(3)); fill($("fc"),COLORS,uniq(1)); fill($("fs"),STYLES,uniq(2));
+  function renderFilter(){
+    const b=+$("fb").value||0, c=+$("fc").value||0, st=+$("fs").value||0, ol=$("flist"), sum=$("fsum");
+    ol.replaceChildren();
+    if(!b&&!c&&!st){ ol.hidden=true; sum.style.display="block"; sum.textContent="ブランド・カラー・着こなしのどれかを選ぶと、該当する日が出ます。"; return; }
+    const keys=filterKeys(b,c,st,$("fpast").checked?null:today);
+    ol.hidden=keys.length===0; sum.style.display="block";
+    sum.textContent=keys.length?keys.length+"日が見つかりました(掲載期間 "+fmt(FIRST,true)+" 〜 "+fmt(LAST,true)+")":"掲載期間内に、該当する日はありません(掲載期間 "+fmt(FIRST,true)+" 〜 "+fmt(LAST,true)+")。";
+    keys.forEach(k=>{ const t=trendOf(k), li=document.createElement("li"); const d=document.createElement("div"); d.className="d"; d.textContent=fmt(k); const sm=document.createElement("small"); sm.textContent=k<today?"過去":(k===today?"今日":""); if(sm.textContent) d.appendChild(sm); const w=document.createElement("div"); w.className="t"; w.appendChild(inline(t)); li.append(d,w); ol.appendChild(li); });
+  }
+  ["fb","fc","fs","fpast"].forEach(id=>$(id).addEventListener("input",renderFilter));
+  $("fclear").addEventListener("click",()=>{ $("fb").value=""; $("fc").value=""; $("fs").value=""; $("fpast").checked=false; renderFilter(); });
+  renderFilter();
   $("pick").min=FIRST; $("pick").max=LAST; $("pick").value=MAP[today]?today:FIRST;
   renderToday(); addRows(30); renderPick();
   $("more").addEventListener("click",()=>addRows(30));
