@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="スナックワールドの今日のトレンド(朝6時更新)と、今後のトレンド予報。個人による解析で、公式とは無関係です。">
+<style>
+:root{color-scheme:light}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>スナックワールド トレンド予報</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+/* Layout: one narrow column. Today's trend as three large tiles at the top, a scrolling forecast list below, a date lookup between them. */
+:root{
+  --bg:#f6f4f7; --surface:#ffffff; --fg:#241f2e; --muted:#6b6478; --line:#e3deea;
+  --accent:#d6437f; --accent-soft:#fbe3ee; --accent-fg:#ffffff;
+  --font:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#17141d; --surface:#221e2b; --fg:#f1edf6; --muted:#a79fb5; --line:#363046;
+    --accent:#ff7fb0; --accent-soft:#3a2231; --accent-fg:#2a0f1c; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#17141d; --surface:#221e2b; --fg:#f1edf6; --muted:#a79fb5; --line:#363046;
+  --accent:#ff7fb0; --accent-soft:#3a2231; --accent-fg:#2a0f1c; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-weight:500;line-height:1.6;font-size:15px;padding-inline:16px;padding-block:28px 48px}
+.wrap{max-width:640px;margin-inline:auto;display:flex;flex-direction:column;gap:28px}
+h1{font-size:1.5rem;font-weight:900;line-height:1.3;margin:0;text-wrap:balance}
+.sub{margin:4px 0 0;color:var(--muted);font-size:.85rem}
+.hero{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:16px}
+.hero-head{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline;justify-content:space-between}
+.eyebrow{font-size:.78rem;letter-spacing:.08em;color:var(--accent);font-weight:900}
+.range{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.tile{background:var(--bg);border-radius:12px;padding:12px 12px 14px;min-width:0;display:flex;flex-direction:column;gap:6px}
+.tile .k{font-size:.72rem;color:var(--muted);letter-spacing:.06em}
+.tile .v{font-size:1.15rem;font-weight:900;line-height:1.3;overflow-wrap:anywhere;display:flex;align-items:center;gap:8px}
+.tile.brand .v{font-size:1.05rem}
+.sw{flex:none;width:18px;height:18px;border-radius:50%;border:1px solid rgba(0,0,0,.25)}
+.next{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.next b{color:var(--fg)}
+@media (max-width:480px){
+  .tiles{grid-template-columns:1fr}
+  .tile{flex-direction:row;align-items:center;justify-content:space-between;padding:12px 14px}
+  .tile .v{font-size:1.1rem}
+}
+.lookup{display:flex;flex-direction:column;gap:10px}
+.lookup h2,.forecast h2{font-size:1rem;font-weight:900;margin:0}
+.row-in{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+input[type=date]{font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-height:44px}
+.pickout{font-size:.95rem}
+.forecast{display:flex;flex-direction:column;gap:12px}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
+.list li{display:grid;grid-template-columns:5.6em minmax(0,1fr);gap:4px 12px;padding:12px 14px;border-top:1px solid var(--line);align-items:center}
+.list li:first-child{border-top:0}
+.d{font-variant-numeric:tabular-nums;font-weight:900}
+.d small{display:block;font-weight:500;color:var(--muted);font-size:.72rem}
+.t{display:flex;flex-wrap:wrap;gap:4px 14px;min-width:0}
+.t span{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.t .b{font-weight:900}
+.t .sw{width:14px;height:14px}
+button{font:inherit;font-weight:900;border:0;border-radius:12px;padding:12px 16px;min-height:44px;background:var(--accent);color:var(--accent-fg);cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button.ghost{background:var(--accent-soft);color:var(--fg)}
+.foot{font-size:.78rem;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+@media (prefers-reduced-motion:no-preference){button{transition:transform .12s}button:active{transform:scale(.97)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>スナックワールド トレンド予報</h1>
+    <p class="sub">毎朝6時に変わる「今日のトレンド」を、先の日まで確認できます。</p>
+  </header>
+
+  <section class="hero" aria-labelledby="today-h">
+    <div class="hero-head">
+      <span class="eyebrow" id="today-h">今日のトレンド</span>
+      <span class="range" id="range"></span>
+    </div>
+    <div class="tiles" id="tiles"></div>
+    <div class="next" id="next"></div>
+  </section>
+
+  <section class="lookup">
+    <h2>日付を指定して調べる</h2>
+    <div class="row-in">
+      <label for="pick" class="sub" style="margin:0">日付(朝6時から翌朝6時まで)</label>
+      <input type="date" id="pick">
+    </div>
+    <div class="pickout" id="pickout" aria-live="polite"></div>
+  </section>
+
+  <section class="forecast">
+    <h2>これからのトレンド</h2>
+    <ol class="list" id="list"></ol>
+    <div class="row-in">
+      <button id="more" type="button">さらに30日分を表示</button>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span>日本時間の朝6時に切り替わります(6時前は前日のトレンドです)。掲載は約3か月先までで、順次更新します。</span>
+    <span>個人による解析・検証です。ゲームの公式情報ではありません。</span>
+  </footer>
+</div>
+<script>
+const COLORS=["レッド","ブルー","イエロー","グリーン","パープル","ピンク","ブラウン","ホワイト","ブラック","ゴールド","シルバー"];
+const SWATCH=["#d9342b","#2f6fd6","#f2c230","#3a9a4b","#7e4fb5","#ee7fae","#7a5236","#f6f6f2","#1c1c1e","linear-gradient(135deg,#f3dc7a,#b88a12)","linear-gradient(135deg,#e6e9ee,#9aa1ad)"];
+const STYLES=["エレガント","カジュアル","クール","スポーティー","スマート","ナチュラル","フォーマル","フューチャー","ポップ","ワーク"];
+const BRANDS=["ノーブランド","Ｍ＆Ｃテクノロジー","クロリス","フライングキャット","パカラ・ラパ","ブリタニア・エンチャント","ぺファニー","フェアリーエレクトロニクス","デトン","ファントム","クランアリーネ","レガシー","シンピ","キューサイ"];
+const DAYS=[["2026-10-08",6,3,12],["2026-10-09",10,9,4],["2026-10-10",5,8,8],["2026-10-11",7,1,10],["2026-10-12",9,6,11],["2026-10-13",6,4,7],["2026-10-14",2,2,4],["2026-10-15",7,4,8],["2026-10-16",2,9,9],["2026-10-17",7,4,4],["2026-10-18",1,10,3],["2026-10-19",11,8,5],["2026-10-20",4,4,8],["2026-10-21",5,6,10],["2026-10-22",7,1,1],["2026-10-23",6,4,12],["2026-10-24",2,10,4],["2026-10-25",6,1,11],["2026-10-26",11,2,8],["2026-10-27",8,7,3],["2026-10-28",9,3,6],["2026-10-29",7,2,5],["2026-10-30",4,10,10],["2026-10-31",9,2,8],["2026-11-01",7,4,7],["2026-11-02",3,9,8],["2026-11-03",9,6,12],["2026-11-04",2,2,3],["2026-11-05",10,7,13],["2026-11-06",9,9,7],["2026-11-07",4,1,6],["2026-11-08",6,6,4],["2026-11-09",1,3,6],["2026-11-10",7,8,1],["2026-11-11",9,7,5],["2026-11-12",3,2,3],["2026-11-13",6,4,9],["2026-11-14",1,5,5],["2026-11-15",4,10,13],["2026-11-16",1,1,7],["2026-11-17",10,5,9],["2026-11-18",2,10,1],["2026-11-19",5,9,6],["2026-11-20",4,3,1],["2026-11-21",8,10,6],["2026-11-22",2,7,7],["2026-11-23",6,9,13],["2026-11-24",11,7,9],["2026-11-25",4,6,11],["2026-11-26",9,9,1],["2026-11-27",7,3,3],["2026-11-28",2,9,5],["2026-11-29",7,4,11],["2026-11-30",10,1,13],["2026-12-01",4,2,10],["2026-12-02",2,3,7],["2026-12-03",7,8,8],["2026-12-04",3,1,12],["2026-12-05",4,8,6],["2026-12-06",7,9,1],["2026-12-07",9,6,5],["2026-12-08",2,2,9],["2026-12-09",8,8,3],["2026-12-10",3,3,1],["2026-12-11",2,2,5],["2026-12-12",8,5,10],["2026-12-13",6,8,8],["2026-12-14",3,5,11],["2026-12-15",7,7,7],["2026-12-16",11,5,10],["2026-12-17",3,10,5],["2026-12-18",1,7,10],["2026-12-19",8,6,7],["2026-12-20",4,2,11],["2026-12-21",8,8,12],["2026-12-22",1,6,4],["2026-12-23",8,10,6],["2026-12-24",6,6,8],["2026-12-25",5,1,1],["2026-12-26",1,8,12],["2026-12-27",4,4,5],["2026-12-28",10,3,9],["2026-12-29",7,8,12],["2026-12-30",8,5,3],["2026-12-31",4,1,11],["2027-01-01",2,5,6],["2027-01-02",9,10,11],["2027-01-03",5,2,3],["2027-01-04",2,4,1],["2027-01-05",3,3,12]];
+const MAP={}; DAYS.forEach(r=>{MAP[r[0]]=[r[1],r[2],r[3]];});
+const FIRST=DAYS[0][0], LAST=DAYS[DAYS.length-1][0], WD="日月火水木金土";
+const pad=n=>String(n).padStart(2,"0");
+function keyAt(ms){ const x=new Date(ms+3*3600000); return x.getUTCFullYear()+"-"+pad(x.getUTCMonth()+1)+"-"+pad(x.getUTCDate()); }
+function shift(key,n){ const p=key.split("-").map(Number), x=new Date(Date.UTC(p[0],p[1]-1,p[2]+n)); return x.getUTCFullYear()+"-"+pad(x.getUTCMonth()+1)+"-"+pad(x.getUTCDate()); }
+function trendOf(key){ const r=MAP[key]; return r?{color:COLORS[r[0]-1],sw:SWATCH[r[0]-1],style:STYLES[r[1]-1],brand:BRANDS[r[2]-1]}:null; }
+function fmt(key,withYear){ const p=key.split("-").map(Number), w=WD[new Date(Date.UTC(p[0],p[1]-1,p[2])).getUTCDay()]; return (withYear?p[0]+"/":"")+p[1]+"/"+p[2]+"("+w+")"; }
+if(typeof document!=="undefined"){
+  const $=id=>document.getElementById(id);
+  function swatch(css){ const s=document.createElement("i"); s.className="sw"; s.style.background=css; return s; }
+  function tile(k,v,cls,sw){ const d=document.createElement("div"); d.className="tile "+(cls||""); const a=document.createElement("span"); a.className="k"; a.textContent=k; const b=document.createElement("span"); b.className="v"; if(sw) b.appendChild(swatch(sw)); b.appendChild(document.createTextNode(v)); d.append(a,b); return d; }
+  function inline(t){ const f=document.createDocumentFragment(); const b=document.createElement("span"); b.className="b"; b.textContent=t.brand; const c=document.createElement("span"); c.appendChild(swatch(t.sw)); c.appendChild(document.createTextNode(t.color)); const s=document.createElement("span"); s.textContent=t.style; f.append(b,c,s); return f; }
+  let today=keyAt(Date.now()), shown=0;
+  function renderToday(){
+    const t=trendOf(today), box=$("tiles");
+    if(!t){ box.replaceChildren(tile("お知らせ","この日のデータは未掲載です","brand")); $("range").textContent=""; $("next").textContent="ページの更新をお待ちください。"; return; }
+    box.replaceChildren(tile("ブランド",t.brand,"brand"),tile("カラー",t.color,"",t.sw),tile("着こなし",t.style));
+    const tm=shift(today,1);
+    $("range").textContent=fmt(today)+" 6:00 〜 "+fmt(tm)+" 6:00";
+    const nt=trendOf(tm); if(!nt){ $("next").textContent="次の更新は "+fmt(tm)+" 6:00。"; return; }
+    $("next").replaceChildren(document.createTextNode("次の更新は "+fmt(tm)+" 6:00。明日は "),Object.assign(document.createElement("b"),{textContent:nt.brand+" / "+nt.color+" / "+nt.style}));
+  }
+  function addRows(count){
+    const ol=$("list");
+    for(let i=0;i<count;i++){
+      const k=shift(today,shown+1), t=trendOf(k); if(!t){ $("more").hidden=true; break; }
+      shown++; const li=document.createElement("li");
+      const d=document.createElement("div"); d.className="d"; d.textContent=fmt(k); const sm=document.createElement("small"); sm.textContent=shown===1?"明日":shown+"日後"; d.appendChild(sm);
+      const w=document.createElement("div"); w.className="t"; w.appendChild(inline(t)); li.append(d,w); ol.appendChild(li);
+    }
+    if(!trendOf(shift(today,shown+1))) $("more").hidden=true;
+  }
+  function renderPick(){
+    const v=$("pick").value; if(!v){ $("pickout").textContent=""; return; }
+    const t=trendOf(v), o=$("pickout"); o.replaceChildren();
+    if(!t){ o.style.display="block"; o.textContent="この日の結果は掲載していません。掲載期間は "+fmt(FIRST,true)+" 〜 "+fmt(LAST,true)+" です。"; return; }
+    const lead=document.createElement("b"); lead.textContent=fmt(v,true)+" 6:00〜 "; o.append(lead); o.appendChild(inline(t));
+    o.style.display="flex"; o.style.flexWrap="wrap"; o.style.gap="4px 14px"; o.style.alignItems="center";
+  }
+  $("pick").min=FIRST; $("pick").max=LAST; $("pick").value=MAP[today]?today:FIRST;
+  renderToday(); addRows(30); renderPick();
+  $("more").addEventListener("click",()=>addRows(30));
+  $("pick").addEventListener("input",renderPick);
+  setInterval(()=>{ const k=keyAt(Date.now()); if(k!==today){ today=k; shown=0; $("list").replaceChildren(); $("more").hidden=false; renderToday(); addRows(30); } },30000);
+}
+</script>
+</body>
+</html>
