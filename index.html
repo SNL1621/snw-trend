@@ -25,6 +25,9 @@ img{max-width:100%}
 .more-i{margin-top:6px;font-size:.82rem;padding:8px 12px;min-height:40px}
 .tapblock{display:flex;flex-direction:column;gap:12px}
 .detail li{display:list-item;border:0;padding:0}
+.fh{font-size:.85rem;font-weight:900;margin-top:4px}
+.filters2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (min-width:560px){.filters2{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
 <title>スナックワールド トレンド予報</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -133,6 +136,13 @@ button.ghost{background:var(--accent-soft);color:var(--fg)}
       <label class="fld" for="fc">カラー<select id="fc"></select></label>
       <label class="fld" for="fs">着こなし<select id="fs"></select></label>
     </div>
+    <div class="fh">トレンドボーナス数で絞り込む(装備で届く最大の数)</div>
+    <div class="filters2">
+      <label class="fld" for="fm">合計(最大8)<select id="fm"><option value="">すべて</option><option value="6">6以上</option><option value="7">7以上</option><option value="8">8以上</option></select></label>
+      <label class="fld" for="fh2">あたま<select id="fh2"><option value="">すべて</option><option value="2">2個以上</option><option value="3">3個</option></select></label>
+      <label class="fld" for="fb2">からだ<select id="fb2"><option value="">すべて</option><option value="2">2個以上</option><option value="3">3個</option></select></label>
+      <label class="fld" for="fa2">アクセサリー<select id="fa2"><option value="">すべて</option><option value="2">2個以上</option><option value="3">3個</option></select></label>
+    </div>
     <div class="row-in">
       <label class="chk" for="fpast"><input type="checkbox" id="fpast">過去の日も含める</label>
       <button type="button" id="fclear" class="ghost">条件をリセット</button>
@@ -167,7 +177,7 @@ const FIRST=DAYS[0][0], LAST=DAYS[DAYS.length-1][0], WD="日月火水木金土";
 const pad=n=>String(n).padStart(2,"0");
 function keyAt(ms){ const x=new Date(ms+3*3600000); return x.getUTCFullYear()+"-"+pad(x.getUTCMonth()+1)+"-"+pad(x.getUTCDate()); }
 function shift(key,n){ const p=key.split("-").map(Number), x=new Date(Date.UTC(p[0],p[1]-1,p[2]+n)); return x.getUTCFullYear()+"-"+pad(x.getUTCMonth()+1)+"-"+pad(x.getUTCDate()); }
-function filterKeys(b,c,st,fromKey){ const out=[]; DAYS.forEach(r=>{ if(fromKey&&r[0]<fromKey) return; if(c&&r[1]!==c) return; if(st&&r[2]!==st) return; if(b&&r[3]!==b) return; out.push(r[0]); }); return out; }
+function filterKeys(b,c,st,fromKey,bo){ bo=bo||{}; const out=[]; DAYS.forEach(r=>{ if(fromKey&&r[0]<fromKey) return; if(c&&r[1]!==c) return; if(st&&r[2]!==st) return; if(b&&r[3]!==b) return; const d=DET[r[0]]; if(d){ const h=d[0][0], bd=d[1][0], a=d[2][0]; if(bo.tot&&h+bd+a<bo.tot) return; if(bo.h&&h<bo.h) return; if(bo.b&&bd<bo.b) return; if(bo.a&&a<bo.a) return; } out.push(r[0]); }); return out; }
 function trendOf(key){ const r=MAP[key]; return r?{color:COLORS[r[0]-1],sw:SWATCH[r[0]-1],style:STYLES[r[1]-1],brand:BRANDS[r[2]-1]}:null; }
 function fmt(key,withYear){ const p=key.split("-").map(Number), w=WD[new Date(Date.UTC(p[0],p[1]-1,p[2])).getUTCDay()]; return (withYear?p[0]+"/":"")+p[1]+"/"+p[2]+"("+w+")"; }
 if(typeof document!=="undefined"){
@@ -253,15 +263,16 @@ if(typeof document!=="undefined"){
   fill($("fb"),BRANDS,uniq(3)); fill($("fc"),COLORS,uniq(1)); fill($("fs"),STYLES,uniq(2));
   function renderFilter(){
     const b=+$("fb").value||0, c=+$("fc").value||0, st=+$("fs").value||0, ol=$("flist"), sum=$("fsum");
+    const bo={tot:+$("fm").value||0,h:+$("fh2").value||0,b:+$("fb2").value||0,a:+$("fa2").value||0};
     ol.replaceChildren();
-    if(!b&&!c&&!st){ ol.hidden=true; sum.style.display="block"; sum.textContent="ブランド・カラー・着こなしのどれかを選ぶと、該当する日が出ます。"; return; }
-    const keys=filterKeys(b,c,st,$("fpast").checked?null:today);
+    if(!b&&!c&&!st&&!bo.tot&&!bo.h&&!bo.b&&!bo.a){ ol.hidden=true; sum.style.display="block"; sum.textContent="ブランド・カラー・着こなし・ボーナス数のどれかを選ぶと、該当する日が出ます(組み合わせもできます)。"; return; }
+    const keys=filterKeys(b,c,st,$("fpast").checked?null:today,bo);
     ol.hidden=keys.length===0; sum.style.display="block";
     sum.textContent=keys.length?keys.length+"日が見つかりました(掲載期間 "+fmt(FIRST,true)+" 〜 "+fmt(LAST,true)+")":"掲載期間内に、該当する日はありません(掲載期間 "+fmt(FIRST,true)+" 〜 "+fmt(LAST,true)+")。";
     keys.forEach(k=>{ const t=trendOf(k), li=document.createElement("li"); const d=document.createElement("div"); d.className="d"; d.textContent=fmt(k); const sm=document.createElement("small"); sm.textContent=k<today?"過去":(k===today?"今日":""); if(sm.textContent) d.appendChild(sm); const w=document.createElement("div"); w.className="t"; w.appendChild(inline(t)); li.append(d,w); tapify(li,k); ol.appendChild(li); });
   }
-  ["fb","fc","fs","fpast"].forEach(id=>$(id).addEventListener("input",renderFilter));
-  $("fclear").addEventListener("click",()=>{ $("fb").value=""; $("fc").value=""; $("fs").value=""; $("fpast").checked=false; renderFilter(); });
+  ["fb","fc","fs","fm","fh2","fb2","fa2","fpast"].forEach(id=>$(id).addEventListener("input",renderFilter));
+  $("fclear").addEventListener("click",()=>{ $("fb").value=""; $("fc").value=""; $("fs").value=""; $("fm").value=""; $("fh2").value=""; $("fb2").value=""; $("fa2").value=""; $("fpast").checked=false; renderFilter(); });
   renderFilter();
   $("pick").min=FIRST; $("pick").max=LAST; $("pick").value=MAP[today]?today:FIRST;
   renderToday(); addRows(30); renderPick();
